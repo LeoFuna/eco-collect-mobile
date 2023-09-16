@@ -1,0 +1,6 @@
+- [ ] Expo Google Fonts
+- [ ] Expo Navigation
+- [ ] React Native
+- [ ] React Native Gesture Handler
+- [ ] React Native Maps
+- [ ] Typescript
