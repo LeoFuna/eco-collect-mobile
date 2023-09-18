@@ -1,20 +1,47 @@
 import { RectButton, TextInput } from 'react-native-gesture-handler';
-import React from "react";
+import React, { useEffect } from "react";
 import { Feather as Icon } from "@expo/vector-icons";
 import { Image, ImageBackground, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import RNPickerSelect from 'react-native-picker-select';
 import logo from '../../assets/logo.png';
 import bg from '../../assets/home-bg.png';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 type StackNavigation = StackNavigationProp<any>;
 
+type BrazilState = {
+  id: number,
+  sigla: string,
+  nome: string,
+  regiao: {
+    id: number,
+    sigla: string,
+    nome: string,
+  }
+}
+
+const serializeStatesFromApi = (statesFromApi: BrazilState[]) => {
+  return statesFromApi.map(({ sigla, nome }) => ({
+    label: nome,
+    value: sigla,
+  }))
+}
+
 export default function Home() {
   const navigation = useNavigation<StackNavigation>();
+  const [brazilStates, setBrazilStates] = React.useState<{ label: string, value: string }[]>([]);
+  const [selectedState, setSelectedState] = React.useState<string>();
 
   const handleNavigateToPoints = () => {
-    navigation.navigate('Points');
+    navigation.navigate('Points', { uf: selectedState });
   }
+
+  useEffect(() => {
+    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
+    .then(response => response.json())
+    .then(data => setBrazilStates(serializeStatesFromApi(data)))
+  }, [])
 
   return (
     <ImageBackground
@@ -27,6 +54,30 @@ export default function Home() {
         <Image source={logo} />
         <Text style={styles.title}>Seu marketplace de coleta de resíduos.</Text>
         <Text style={styles.description}>Ajudamos pessoas a encontrarem pontos de coleta de forma eficiente</Text>
+      </View>
+      
+      <View style={styles.selectContainer}>
+        <RNPickerSelect
+          onValueChange={(value) => setSelectedState(value)}
+          items={brazilStates}
+          placeholder={{ label: 'Selecione o estado' }}
+          style={pickerSelectStyles}
+          useNativeAndroidPickerStyle={false}
+        >
+          <TextInput
+            style={{
+              backgroundColor: '#FFF',
+              borderRadius: 8,
+              height: 60,
+              marginBottom: 8,
+              paddingHorizontal: 24,
+              fontSize: 16,
+            }}
+            value={brazilStates?.find(({ value }) => value === selectedState)?.label || ''}
+            placeholder='Selecione o estado'
+          />
+          <Icon name='chevron-down' size={20} color='#A0A0B2' style={{ position: 'absolute', right: 15, top: 20 }} />
+        </RNPickerSelect>
       </View>
 
       <View style={styles.footer}>
@@ -97,5 +148,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontFamily: 'Roboto_500Medium',
+  },
+  selectContainer: {
+    marginBottom: 24,
   }
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 4,
+    color: '#A0A0B2',
+    paddingRight: 30, // to ensure the text is never behind the icon
+  },
+  inputAndroid: {
+    fontSize: 14,
+    fontFamily: 'Roboto_400Regular',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderWidth: 0.5,
+    borderRadius: 8,
+    color: '#A0A0B2',
+    backgroundColor: '#FFF',
+    paddingRight: 30, // to ensure the text is never behind the icon
+  },
 });
